@@ -87,6 +87,35 @@ define('views/site/navbar', 'view', function (Dep) {
             'click [data-action="toggleCollapsable"]': function () {
                 this.toggleCollapsable();
             },
+            'click a.subnav-toggle': function (e) {
+                var $el = $(e.currentTarget);
+                var $subnav = $('#' + $el.data('dropdown'));
+
+                $subnav.toggleClass('hidden');
+                $('span', $el).toggleClass('caret-up');
+                $('span', $el).toggleClass('caret');
+            },
+            'click a.subnav-toggle': function (e) {
+                var $el = $(e.currentTarget);
+                var $subnav = $('#' + $el.data('dropdown'));
+
+                $subnav.toggleClass('hidden');
+                $('span', $el).toggleClass('caret-up');
+                $('span', $el).toggleClass('caret');
+            },
+            'mouseenter ul.navbar-nav li.not-in-more > a.nav-link': function (e) {
+                if($('body').hasClass('minimized')) {
+                    var $el = $(e.currentTarget);
+                    if($el.next().hasClass('subnav-toggle') && $el.next().next().hasClass('hidden'))
+                        $el.next().trigger('click');
+                }
+            },
+            'mouseleave  ul.navbar-nav li.not-in-more > ul.subnav': function (e) {
+                if($('body').hasClass('minimized')) {
+                    var $el = $(e.currentTarget);
+                    $el.addClass('hidden');
+                }
+            }
         },
 
         isCollapsableVisible: function () {
@@ -161,6 +190,7 @@ define('views/site/navbar', 'view', function (Dep) {
                 this.getStorage().set('state', 'siteLayoutState', 'expanded');
             } else {
                 $body.addClass('minimized');
+                $('ul.subnav', $body).addClass('hidden');
                 this.getStorage().set('state', 'siteLayoutState', 'collapsed');
             }
             if (window.Event) {
@@ -530,6 +560,8 @@ define('views/site/navbar', 'view', function (Dep) {
                     iconClass = this.getMetadata().get(['clientDefs', tab, 'iconClass'])
                 }
 
+                var navFilterList = this.getMetadata().get(['clientDefs', tab, 'navFilterList']) || null;
+
                 var o = {
                     link: link,
                     label: label,
@@ -537,7 +569,8 @@ define('views/site/navbar', 'view', function (Dep) {
                     name: tab,
                     isInMore: moreIsMet,
                     color: color,
-                    iconClass: iconClass
+                    iconClass: iconClass,
+                    navFilterList: navFilterList
                 };
                 if (color && !iconClass) {
                     o.colorIconClass = 'color-icon fas fa-square-full';
