@@ -1,0 +1,26 @@
+version: '3.5'
+
+services:
+  database:
+    image: mariadb
+    container_name: espo-db
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: crm
+      MYSQL_PASSWORD: crm@db
+      MYSQL_DATABASE: crm
+
+  crm:
+    image: webdevops/php-apache
+    container_name: crm
+    ports:
+      - 8090:80
+    links:
+      - database
+    environment:
+      WEB_DOCUMENT_ROOT: /opt/espo
+      WEB_DOCUMENT_INDEX: index.php
+    volumes:
+      - ./build/EspoCRM-5.6.11/:/opt/espo
