@@ -29,6 +29,7 @@
 
 namespace Espo\Services;
 
+use dawood\phpChrome\Chrome;
 use \Espo\Core\Exceptions\Forbidden;
 use \Espo\Core\Exceptions\NotFound;
 use \Espo\Core\Exceptions\Error;
@@ -36,6 +37,7 @@ use \Espo\Core\Exceptions\Error;
 use Espo\ORM\Entity;
 
 use \Espo\Core\Htmlizer\Htmlizer;
+use Mpdf\Mpdf;
 
 class Pdf extends \Espo\Core\Services\Base
 {
@@ -56,6 +58,7 @@ class Pdf extends \Espo\Core\Services\Base
         $this->addDependency('number');
         $this->addDependency('entityManager');
         $this->addDependency('defaultLanguage');
+        $this->addDependency('log');
     }
 
     protected function getAcl()
@@ -78,59 +81,53 @@ class Pdf extends \Espo\Core\Services\Base
         return $this->getInjection('fileManager');
     }
 
-    protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer, \Espo\Core\Pdf\Tcpdf $pdf)
+    protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer, /*\Espo\Core\Pdf\Tcpdf*/ \Mpdf\Mpdf $pdf)
     {
         $fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
         if ($template->get('fontFace')) {
             $fontFace = $template->get('fontFace');
         }
 
-        $pdf->setFont($fontFace, '', $this->fontSize, '', true);
+        try {
+            $pdf->AddFont($fontFace);
 
-        $pdf->setPrintHeader(false);
+            $pdf->default_font = $fontFace;
 
-        $pdf->setAutoPageBreak(true, $template->get('bottomMargin'));
-        $pdf->setMargins($template->get('leftMargin'), $template->get('topMargin'), $template->get('rightMargin'));
+            if($template->get('printFooter')) {
+                $htmlFooter = $htmlizer->render($entity, $template->get('footer'));
+                $pdf->SetHTMLFooter($htmlFooter);
+            }
 
-        if ($template->get('printFooter')) {
-            $htmlFooter = $htmlizer->render($entity, $template->get('footer'));
-            $pdf->setFooterFont([$fontFace, '', $this->fontSize]);
-            $pdf->setFooterPosition($template->get('footerPosition'));
-            $pdf->setFooterHtml($htmlFooter);
-        } else {
-            $pdf->setPrintFooter(false);
+            if($template->get('printHeader')) {
+                $htmlHeader = $htmlizer->render($entity, $template->get('header'));
+                $pdf->SetHTMLHeader($htmlHeader);
+            }
+
+            $pageOrientation = $template->get('pageOrientation') || 'Portrait';
+            $pageFormat = $template->get('pageFormat') || 'A4';
+            if($pageFormat === 'Custom')
+                $pageFormat = [$template->get('pageWidth'), $template->get('pageHeight')];
+
+            $pageOrientationCode = 'P';
+            if($pageOrientation === 'Landscape')
+                $pageOrientationCode = 'L';
+
+            $pdf->AddPage($pageOrientationCode);
+
+            $htmlBody = $htmlizer->render($entity, $template->get('body'));
+            $pdf->WriteHTML($htmlBody);
+        } catch (\Exception $ex) {
+            $this->getInjection('log')->warning($ex->getMessage());
         }
 
-        $pageOrientation = 'Portrait';
-        if ($template->get('pageOrientation')) {
-            $pageOrientation = $template->get('pageOrientation');
-        }
-        $pageFormat = 'A4';
-        if ($template->get('pageFormat')) {
-            $pageFormat = $template->get('pageFormat');
-        }
-        if ($pageFormat === 'Custom') {
-            $pageFormat = [$template->get('pageWidth'), $template->get('pageHeight')];
-        }
-        $pageOrientationCode = 'P';
-        if ($pageOrientation === 'Landscape') {
-            $pageOrientationCode = 'L';
-        }
-
-        $pdf->addPage($pageOrientationCode, $pageFormat);
-
-        $htmlHeader = $htmlizer->render($entity, $template->get('header'));
-        $pdf->writeHTML($htmlHeader, true, false, true, false, '');
-
-        $htmlBody = $htmlizer->render($entity, $template->get('body'));
-        $pdf->writeHTML($htmlBody, true, false, true, false, '');
     }
 
     public function generateMailMerge($entityType, $entityList, Entity $template, $name, $campaignId = null)
     {
         $htmlizer = $this->createHtmlizer();
-        $pdf = new \Espo\Core\Pdf\Tcpdf();
-        $pdf->setUseGroupNumbers(true);
+        /*$pdf = new \Espo\Core\Pdf\Tcpdf();
+        $pdf->setUseGroupNumbers(true);*/
+        $pdf = new Mpdf();
 
         if ($this->getServiceFactory()->checkExists($entityType)) {
             $service = $this->getServiceFactory()->create($entityType);
@@ -143,7 +140,7 @@ class Pdf extends \Espo\Core\Services\Base
             if (method_exists($service, 'loadAdditionalFieldsForPdf')) {
                 $service->loadAdditionalFieldsForPdf($entity);
             }
-            $pdf->startPageGroup();
+            //$pdf->startPageGroup();
             $this->printEntity($entity, $template, $htmlizer, $pdf);
         }
 
@@ -151,7 +148,8 @@ class Pdf extends \Espo\Core\Services\Base
 
         $attachment = $this->getEntityManager()->getEntity('Attachment');
 
-        $content = $pdf->output('', 'S');
+        //$content = $pdf->output('', 'S');
+        $content = $pdf->Output('', 'S');
 
         $attachment->set([
             'name' => $filename,
@@ -198,8 +196,9 @@ class Pdf extends \Espo\Core\Services\Base
         }
 
         $htmlizer = $this->createHtmlizer();
-        $pdf = new \Espo\Core\Pdf\Tcpdf();
-        $pdf->setUseGroupNumbers(true);
+        /*$pdf = new \Espo\Core\Pdf\Tcpdf();
+        $pdf->setUseGroupNumbers(true);*/
+        $pdf = new Mpdf();
 
         $entityList = $this->getEntityManager()->getRepository($entityType)->where([
             'id' => $idList
@@ -213,11 +212,11 @@ class Pdf extends \Espo\Core\Services\Base
             if (method_exists($service, 'loadAdditionalFieldsForPdf')) {
                 $service->loadAdditionalFieldsForPdf($entity);
             }
-            $pdf->startPageGroup();
+            //$pdf->startPageGroup();
             $this->printEntity($entity, $template, $htmlizer, $pdf);
         }
 
-        $content = $pdf->output('', 'S');
+        $content = $pdf->Output('', 'S');
 
         $entityTypeTranslated = $this->getInjection('defaultLanguage')->translate($entityType, 'scopeNamesPlural');
         $filename = \Espo\Core\Utils\Util::sanitizeFileName($entityTypeTranslated) . '.pdf';
@@ -282,7 +281,8 @@ class Pdf extends \Espo\Core\Services\Base
         }
 
         $htmlizer = $this->createHtmlizer();
-        $pdf = new \Espo\Core\Pdf\Tcpdf();
+        //$pdf = new \Espo\Core\Pdf\Tcpdf();
+        $pdf = new Mpdf();
 
         $this->printEntity($entity, $template, $htmlizer, $pdf);
 
@@ -291,11 +291,11 @@ class Pdf extends \Espo\Core\Services\Base
             $name = \Espo\Core\Utils\Util::sanitizeFileName($name);
             $fileName = $name . '.pdf';
 
-            $pdf->output($fileName, 'I');
+            $pdf->Output($fileName, 'I');
             return;
         }
 
-        return $pdf->output('', 'S');
+        return $pdf->Output('', 'S');
     }
 
     protected function createHtmlizer()
