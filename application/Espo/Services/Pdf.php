@@ -81,9 +81,9 @@ class Pdf extends \Espo\Core\Services\Base
         return $this->getInjection('fileManager');
     }
 
-    protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer, /*\Espo\Core\Pdf\Tcpdf*/ \Mpdf\Mpdf $pdf)
+    protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer)
     {
-        $fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
+        /*$fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
         if ($template->get('fontFace')) {
             $fontFace = $template->get('fontFace');
         }
@@ -118,16 +118,22 @@ class Pdf extends \Espo\Core\Services\Base
             $pdf->WriteHTML($htmlBody);
         } catch (\Exception $ex) {
             $this->getInjection('log')->warning($ex->getMessage());
-        }
+        }*/
 
+        $htmlHeader = $htmlizer->render($entity, $template->get('header'));
+        $htmlBody = $htmlizer->render($entity, $template->get('body'));
+
+        $htmlFooter = '';
+        if($template->get('printFooter'))
+            $htmlFooter = $htmlizer->render($entity, $template->get('footer'));
+
+        return $htmlHeader.$htmlBody.$htmlFooter;
     }
 
     public function generateMailMerge($entityType, $entityList, Entity $template, $name, $campaignId = null)
     {
         $htmlizer = $this->createHtmlizer();
-        /*$pdf = new \Espo\Core\Pdf\Tcpdf();
-        $pdf->setUseGroupNumbers(true);*/
-        $pdf = new Mpdf();
+        $chrome = new Chrome(null, '/usr/bin/google-chrome');
 
         if ($this->getServiceFactory()->checkExists($entityType)) {
             $service = $this->getServiceFactory()->create($entityType);
@@ -135,13 +141,15 @@ class Pdf extends \Espo\Core\Services\Base
             $service = $this->getServiceFactory()->create('Record');
         }
 
+        $additionalContent = '';
+
         foreach ($entityList as $entity) {
             $service->loadAdditionalFields($entity);
             if (method_exists($service, 'loadAdditionalFieldsForPdf')) {
                 $service->loadAdditionalFieldsForPdf($entity);
             }
             //$pdf->startPageGroup();
-            $this->printEntity($entity, $template, $htmlizer, $pdf);
+            $additionalContent .= $this->printEntity($entity, $template, $htmlizer);
         }
 
         $filename = \Espo\Core\Utils\Util::sanitizeFileName($name) . '.pdf';
@@ -149,7 +157,8 @@ class Pdf extends \Espo\Core\Services\Base
         $attachment = $this->getEntityManager()->getEntity('Attachment');
 
         //$content = $pdf->output('', 'S');
-        $content = $pdf->Output('', 'S');
+        $chrome->useHtml($this->printEntity($entity, $template, $htmlizer));
+        $content = $chrome->getPdf();
 
         $attachment->set([
             'name' => $filename,
