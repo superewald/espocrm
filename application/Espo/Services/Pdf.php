@@ -83,43 +83,6 @@ class Pdf extends \Espo\Core\Services\Base
 
     protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer)
     {
-        /*$fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
-        if ($template->get('fontFace')) {
-            $fontFace = $template->get('fontFace');
-        }
-
-        try {
-            $pdf->AddFont($fontFace);
-
-            $pdf->default_font = $fontFace;
-
-            if($template->get('printFooter')) {
-                $htmlFooter = $htmlizer->render($entity, $template->get('footer'));
-                $pdf->SetHTMLFooter($htmlFooter);
-            }
-
-            if($template->get('printHeader')) {
-                $htmlHeader = $htmlizer->render($entity, $template->get('header'));
-                $pdf->SetHTMLHeader($htmlHeader);
-            }
-
-            $pageOrientation = $template->get('pageOrientation') || 'Portrait';
-            $pageFormat = $template->get('pageFormat') || 'A4';
-            if($pageFormat === 'Custom')
-                $pageFormat = [$template->get('pageWidth'), $template->get('pageHeight')];
-
-            $pageOrientationCode = 'P';
-            if($pageOrientation === 'Landscape')
-                $pageOrientationCode = 'L';
-
-            $pdf->AddPage($pageOrientationCode);
-
-            $htmlBody = $htmlizer->render($entity, $template->get('body'));
-            $pdf->WriteHTML($htmlBody);
-        } catch (\Exception $ex) {
-            $this->getInjection('log')->warning($ex->getMessage());
-        }*/
-
         $htmlHeader = $htmlizer->render($entity, $template->get('header'));
         $htmlBody = $htmlizer->render($entity, $template->get('body'));
 
@@ -127,6 +90,7 @@ class Pdf extends \Espo\Core\Services\Base
         if($template->get('printFooter'))
             $htmlFooter = $htmlizer->render($entity, $template->get('footer'));
 
+        $this->getInjection('log')->addWarning('HTML', [$htmlHeader, $htmlBody, $htmlFooter]);
         return $htmlHeader.$htmlBody.$htmlFooter;
     }
 
@@ -205,14 +169,13 @@ class Pdf extends \Espo\Core\Services\Base
         }
 
         $htmlizer = $this->createHtmlizer();
-        /*$pdf = new \Espo\Core\Pdf\Tcpdf();
-        $pdf->setUseGroupNumbers(true);*/
-        $pdf = new Mpdf();
+        $chrome = new Chrome(null, '/usr/bin/google-chrome');
 
         $entityList = $this->getEntityManager()->getRepository($entityType)->where([
             'id' => $idList
         ])->find();
 
+        $additionalContent = '';
         foreach ($entityList as $entity) {
             if ($checkAcl) {
                 if (!$this->getAcl()->check($entity)) continue;
@@ -222,10 +185,11 @@ class Pdf extends \Espo\Core\Services\Base
                 $service->loadAdditionalFieldsForPdf($entity);
             }
             //$pdf->startPageGroup();
-            $this->printEntity($entity, $template, $htmlizer, $pdf);
+            $additionalContent = $this->printEntity($entity, $template, $htmlizer);
         }
 
-        $content = $pdf->Output('', 'S');
+        $chrome->useHtml($this->printEntity($entity, $template, $htmlizer));
+        $content = $chrome->getPdf();
 
         $entityTypeTranslated = $this->getInjection('defaultLanguage')->translate($entityType, 'scopeNamesPlural');
         $filename = \Espo\Core\Utils\Util::sanitizeFileName($entityTypeTranslated) . '.pdf';
@@ -289,22 +253,32 @@ class Pdf extends \Espo\Core\Services\Base
             throw new Forbidden();
         }
 
-        $htmlizer = $this->createHtmlizer();
-        //$pdf = new \Espo\Core\Pdf\Tcpdf();
-        $pdf = new Mpdf();
+        try {
+            $htmlizer = $this->createHtmlizer();
+            $chrome = new Chrome(null, '/usr/bin/google-chrome');
+            $chrome->setArgument('--no-sandbox', '');
 
-        $this->printEntity($entity, $template, $htmlizer, $pdf);
+            $chrome->useHtml('<meta charset="UTF-8">'.$this->printEntity($entity, $template, $htmlizer));
 
-        if ($displayInline) {
-            $name = $entity->get('name');
-            $name = \Espo\Core\Utils\Util::sanitizeFileName($name);
-            $fileName = $name . '.pdf';
+            if ($displayInline) {
+                $name = $entity->get('name');
+                $name = \Espo\Core\Utils\Util::sanitizeFileName($name);
+                $fileName = $name . '.pdf';
 
-            $pdf->Output($fileName, 'I');
-            return;
+                $this->getInjection('log')->warning($fileName);
+                //$this->getInjection('log')->warning($this->getFileManager()->getContents($chrome->getPdf()));
+                //$pdf->Output($fileName, 'I');
+                $pdfFile = $this->getFileManager()->getContents($chrome->getPdf($fileName));
+                header("Content-type: application/pdf; charset=UTF-8");
+                print $pdfFile;
+                return;
+            }
+
+            return $this->getFileManager()->getContents($chrome->getPdf());
+        } catch (\Exception $ex) {
+            $this->getInjection('log')->error($ex->getMessage());
+            return '';
         }
-
-        return $pdf->Output('', 'S');
     }
 
     protected function createHtmlizer()
