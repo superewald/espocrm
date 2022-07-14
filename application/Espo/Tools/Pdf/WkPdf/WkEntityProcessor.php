@@ -1,6 +1,6 @@
 <?php
 
-namespace Espo\Modules\Academy\Tools\Pdf\WkPdf;
+namespace Espo\Tools\Pdf\WkPdf;
 
 use Espo\Core\Utils\Config;
 use Espo\Core\Utils\Json;

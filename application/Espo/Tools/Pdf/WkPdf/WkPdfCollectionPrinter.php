@@ -1,6 +1,6 @@
 <?php
 
-namespace Espo\Modules\Academy\Tools\Pdf\WkPdf;
+namespace Espo\Tools\Pdf\WkPdf;
 
 use Espo\ORM\Collection;
 use Espo\Tools\Pdf\CollectionPrinter;
