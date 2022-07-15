@@ -11,7 +11,7 @@ use Espo\Tools\Pdf\Data;
 
 class WkPdfEntityPrinter implements EntityPrinter
 {
-    protected $entityProcessor;
+    protected WkEntityProcessor $entityProcessor;
 
     public function __construct(WkEntityProcessor $entityProcessor)
     {
