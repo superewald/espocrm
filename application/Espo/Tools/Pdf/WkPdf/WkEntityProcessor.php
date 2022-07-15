@@ -15,16 +15,14 @@ use Espo\Tools\Pdf\Params;
 
 class WkEntityProcessor
 {
-    private Config $config;
     private TemplateRendererFactory $templateRendererFactory;
 
-    public function __construct(Config $config, TemplateRendererFactory $templateRendererFactory)
+    public function __construct(TemplateRendererFactory $templateRendererFactory)
     {
-        $this->config = $config;
         $this->templateRendererFactory = $templateRendererFactory;
     }
 
-    public function process(WkPdf $pdf, Template $template, Entity $entity, Params $params, Data $data)
+    public function process(WkPdf $pdf, Template $template, Entity $entity, Params $params, Data $data) : void
     {
         $renderer = $this->templateRendererFactory
             ->create()
@@ -51,9 +49,9 @@ class WkEntityProcessor
 
         $pdf->setOptions($opts);
 
-        $header = tempnam(sys_get_temp_dir(), 'header-tpl');
-        $footer = tempnam(sys_get_temp_dir(), 'footer-tpl');
-
+        $header = (string)tempnam(sys_get_temp_dir(), 'header-tpl');
+        $footer = (string)tempnam(sys_get_temp_dir(), 'footer-tpl');
+        
         if($template->hasHeader()) {
             file_put_contents($header.'.html', "<!DOCTYPE html><html>".$renderer->renderTemplate($template->getHeader())."</html>");
             $pdf->setOptions([

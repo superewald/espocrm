@@ -34,7 +34,7 @@ class WkPdfContents implements Contents
 
     public function getString(): string
     {
-        return $this->pdf->toString();
+        return (string)$this->pdf->toString();
     }
 
     public function getLength(): int
