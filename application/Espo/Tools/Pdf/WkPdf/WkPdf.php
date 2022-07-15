@@ -5,5 +5,5 @@ use mikehaertl\wkhtmlto\Pdf;
 
 class WkPdf extends Pdf
 {
-    public $binary = "/wkhtmltopdf";
+    public $binary = "wkhtmltopdf";
 }
