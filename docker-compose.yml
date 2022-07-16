@@ -31,7 +31,7 @@ services:
       ESPOCRM_ADMIN_PASSWORD: admin
       ESPOCRM_SITE_URL: "http://localhost:8080"
     volumes:
-      - ./build/EspoCRM-7.1.9:/app
+      - ./:/app
     restart: always
     ports:
       - 8080:80
