@@ -4,7 +4,7 @@ services:
 
   mysql:
     image: mysql:8
-    container_name: mysql
+    container_name: espo-db
     command: --default-authentication-plugin=mysql_native_password    
     environment:
       MYSQL_ROOT_PASSWORD: root_password
@@ -18,22 +18,20 @@ services:
       - 3306:3306
 
   espocrm:
-    image: webdevops/php-apache:8.0
-    #image: espodev
-    #build:
-    #  context: ./docker
-    #  dockerfile: Dockerfile.dev
-    container_name: espocrm
+    image: espodev
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.dev
+    container_name: espo-dev
     environment:
-      ESPOCRM_DATABASE_HOST: localhost
+      ESPOCRM_DATABASE_HOST: mysql
       ESPOCRM_DATABASE_USER: espocrm
-      ESPOCRM_DATABASE_PASSWORD: database_password
+      ESPOCRM_DATABASE_PASSWORD: espocrm
       ESPOCRM_ADMIN_USERNAME: admin
-      ESPOCRM_ADMIN_PASSWORD: password
+      ESPOCRM_ADMIN_PASSWORD: admin
       ESPOCRM_SITE_URL: "http://localhost:8080"
     volumes:
       - ./build/EspoCRM-7.1.9:/app
-      - ./home/superewald/Downloads/wkhtmltopdf/usr/local/bin/wkhtmltopdf:/usr/bin/wkhtmltopdf
     restart: always
     ports:
       - 8080:80
