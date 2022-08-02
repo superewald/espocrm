@@ -243,7 +243,8 @@
         "newExtensionVersionIsAvailable": "New {extensionName} version {latestVersion} is available.",
         "uninstallConfirmation": "Are you sure you want to uninstall the extension?",
         "upgradeInfo": "Check the [documentation]({url}) about how to upgrade your EspoCRM instance.",
-        "upgradeRecommendation": "This way of upgrading is not recommended. It's better to upgrade from CLI."
+        "upgradeRecommendation": "This way of upgrading is not recommended. It's better to upgrade from CLI.",
+        "timeOutOfRange": "Time {time} for {field} is not in valid range!"
     },
     "descriptions": {
         "settings": "System settings of application.",
