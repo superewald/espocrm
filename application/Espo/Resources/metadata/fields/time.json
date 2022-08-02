@@ -1,0 +1,57 @@
+{
+    "params": [
+        {
+            "name": "required",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "default",
+            "type": "time"
+        },
+        {
+            "name": "minuteStep",
+            "type": "enumInt",
+            "options": [
+                30,
+                15,
+                10,
+                5,
+                1
+            ]
+        },
+        {
+            "name": "min",
+            "type": "time"
+        },
+        {
+            "name": "max",
+            "type": "time"
+        },
+        {
+            "name": "disabledHours",
+            "type": "multiEnum",
+            "tooltip": true
+        },
+        {
+            "name": "audited",
+            "type": "bool"
+        },
+        {
+            "name": "readOnly",
+            "type": "bool"
+        },
+        {
+            "name": "wrapHours",
+            "type": "bool"
+        }
+    ],
+    "validationList": [
+        "required"
+    ],
+    "filter": true,
+    "fieldDefs": {
+        "notNull": false
+    },
+    "view": "views/fields/time"
+}

@@ -148,7 +148,8 @@
         "checklist": "Checklist",
         "barcode": "Barcode",
         "jsonArray": "Json Array",
-        "jsonObject": "Json Object"
+        "jsonObject": "Json Object",
+        "time": "Time"
     },
     "fields": {
         "type": "Type",
@@ -215,7 +216,9 @@
         "conversionDisabled": "Disable Conversion",
         "decimalPlaces": "Decimal Places",
         "pattern": "Pattern",
-        "globalRestrictions": "Global Restrictions"
+        "globalRestrictions": "Global Restrictions",
+        "disabledHours": "Disabled Hours",
+        "wrapHours": "Wrap Hours"
     },
     "strings" : {
         "rebuildRequired": "Rebuild is required"

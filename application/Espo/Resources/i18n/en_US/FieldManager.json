@@ -102,7 +102,8 @@
         "optionsArray": "A list of possible values and their labels. If empty, the field will allow entering custom values.",
         "maxCount": "Maximum number of items allowed to be selected.",
         "displayAsList": "Each item in a new line.",
-        "optionsVarchar": "A list of autocomplete values."
+        "optionsVarchar": "A list of autocomplete values.",
+        "disabledHours": "Hours that should not be selectable. Either single hour (`10`), minute (`10:15`) or range (`10:00-15:20`)."
     },
     "fieldParts": {
         "address": {
