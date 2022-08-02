@@ -43,8 +43,8 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                 scrollDefaultNow: true,
                 timeFormat: this.timeFormatMap[this.getDateTime().timeFormat],
                 disableTimeRanges: this.getDisabledTimeRanges(),
-                minTime: this.params.minTime || '00:00',
-                maxTime: this.params.maxTime || '23:59',
+                minTime: this.params.min || '00:00',
+                maxTime: this.params.max || '23:59',
                 wrapHours: this.params.wrapHours || false
             });
 
@@ -70,8 +70,8 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
         },
 
         isTimeDisabled: function(offset) {
-            let min = this.params.minTime !== null ? this.timeStringToOffset(this.params.minTime) : 0;
-            let max = this.params.maxTime !== null ? this.timeStringToOffset(this.params.maxTime) : 86400;
+            let min = this.params.min !== null ? this.timeStringToOffset(this.params.min) : 0;
+            let max = this.params.max !== null ? this.timeStringToOffset(this.params.max) : 86400;
 
             if(offset < min || offset > max)
                 return true;
@@ -112,7 +112,10 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                         
                         let timeOffset = this.timeStringToOffset($time.val());
                         if(this.isTimeDisabled(timeOffset)) {
-                            Espo.Ui.notify('Time ' + $time.val() + ' is disabled for field ' + this.name, 'error', 2500);
+                            var msg = this.translate('timeOutOfRange', 'messages', 'Admin')
+                                .replace('{time}', $time.val())
+                                .replace('{field}', this.name);
+                            Espo.Ui.notify(msg, 'error', 2500);
                             $time.val(previousValue);
                             return;
                         }
