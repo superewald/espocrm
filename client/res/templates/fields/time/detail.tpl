@@ -1,3 +1,3 @@
-{{#if time}}
-{{time}}
+{{#if timeString}}
+{{timeString}}
 {{/if}}

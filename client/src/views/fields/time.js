@@ -31,6 +31,7 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
             var data = Dep.prototype.data.call(this);
 
             data.time = this.model.get(this.name);
+            data.timeString = this.timeOffsetToString(data.time);
 
             return data;
         },
@@ -43,11 +44,11 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                 scrollDefaultNow: true,
                 timeFormat: this.timeFormatMap[this.getDateTime().timeFormat],
                 disableTimeRanges: this.getDisabledTimeRanges(),
-                minTime: this.params.min || '00:00',
-                maxTime: this.params.max || '23:59',
+                minTime: this.params.min || 0,
+                maxTime: this.params.max || 86400,
                 wrapHours: this.params.wrapHours || false
             });
-
+            
             $time
                 .parent()
                 .find('button.time-picker-btn')
@@ -69,26 +70,24 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
             return 0;
         },
 
-        isTimeDisabled: function(offset) {
-            let min = this.params.min !== null ? this.timeStringToOffset(this.params.min) : 0;
-            let max = this.params.max !== null ? this.timeStringToOffset(this.params.max) : 86400;
-
-            if(offset < min || offset > max)
-                return true;
+        timeOffsetToString: function(timeOffset) {
+            const pad = num => ("0" + num).slice(-2);
+            const date = new Date(timeOffset * 1000);
+            let hours = date.getHours() - 1,
+                minutes = date.getMinutes(),
+                seconds = date.getSeconds();
             
-            let disabledTimes = this.getDisabledTimeRanges();
-            for(const disabled of disabledTimes) {
-                if(offset >= disabled[0] && offset <= disabled[1])
-                    return true;
-            }
-            
-            return false;
+            let timeString = pad(hours) + ":" + pad(minutes);
+            if(this.params.hasSeconds)
+                timeString += ":" + pad(seconds);
+            return timeString;
         },
 
         afterRender: function () {
             Dep.prototype.afterRender.call(this);
 
             var $time = this.$time = this.$el.find('input.time');
+
             var previousValue = $time.val();
 
             if(this.mode === 'edit') {
@@ -96,27 +95,25 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                 this.initTimePicker();
                 
                 let timeout = false;
-                let isTimeFormatError = false;
+                let isTimeFormatError = false,
+                    isTimeRangeError = false;
 
                 $time.on('change', (e) => {
                     if (!timeout) {
                         if (isTimeFormatError) {
+                            Espo.Ui.notify('Time format is incorrect for ' + this.name + ': ' + $time.val(), 'error', 5000);
+                            $time.val(previousValue);
+                            return;
+                        }
+
+                        if(isTimeRangeError) {
+                            Espo.Ui.notify('The time you selected for ' + this.name + ' is out of range or disabled!', 'error', 5000);
                             $time.val(previousValue);
                             return;
                         }
 
                         if (this.noneOption && $time.val() === '') {
                             $time.val(this.noneOption);
-                            return;
-                        }
-                        
-                        let timeOffset = this.timeStringToOffset($time.val());
-                        if(this.isTimeDisabled(timeOffset)) {
-                            var msg = this.translate('timeOutOfRange', 'messages', 'Admin')
-                                .replace('{time}', $time.val())
-                                .replace('{field}', this.name);
-                            Espo.Ui.notify(msg, 'error', 2500);
-                            $time.val(previousValue);
                             return;
                         }
 
@@ -134,6 +131,11 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                     isTimeFormatError = true;
 
                     setTimeout(() => isTimeFormatError = false, 50);
+                });
+
+                $time.on('timeRangeError', () => {
+                    isTimeRangeError = true;
+                    setTimeout(() => isTimeRangeError = false, 50);
                 });
             }
         },
@@ -169,7 +171,7 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
         fetch: function() {
             var data = {};
 
-            data[this.name] = this.$time.val();
+            data[this.name] = this.timeStringToOffset(this.$time.val());
 
             return data;
         }

@@ -3,7 +3,7 @@
         class="form-control time"
         type="text"
         data-name="{{name}}-time"
-        value="{{time}}"
+        value="{{timeString}}"
         autocomplete="espo-{{name}}"
         spellcheck="false"
     >

@@ -29,9 +29,17 @@
             "type": "time"
         },
         {
+            "name": "hasSeconds",
+            "type": "bool"
+        },
+        {
             "name": "disabledHours",
             "type": "multiEnum",
             "tooltip": true
+        },
+        {
+            "name": "wrapHours",
+            "type": "bool"
         },
         {
             "name": "audited",
@@ -39,10 +47,6 @@
         },
         {
             "name": "readOnly",
-            "type": "bool"
-        },
-        {
-            "name": "wrapHours",
             "type": "bool"
         }
     ],
