@@ -26,7 +26,7 @@
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-define('views/fields/datetime', ['views/fields/date', 'lib!moment'], function (Dep, moment) {
+define('views/fields/datetime', ['views/fields/date', 'lib!moment', 'model'], function (Dep, moment, Model) {
 
     /**
      * A date-time field.
@@ -90,6 +90,10 @@ define('views/fields/datetime', ['views/fields/date', 'lib!moment'], function (D
             }
 
             return data;
+        },
+
+        setup: function() {
+            Dep.prototype.setup.call(this);
         },
 
         getDateStringValue: function () {
@@ -199,8 +203,19 @@ define('views/fields/datetime', ['views/fields/date', 'lib!moment'], function (D
             if (this.mode === 'edit') {
                 this.$date = this.$element;
                 var $time = this.$time = this.$el.find('input.time-part');
+                
+                this.createView('time', 'views/fields/time', {
+                    name: this.name,
+                    model: this.model,
+                    isDateTimeField: true,
+                    el: this.getSelector() + ' .time-part',
+                    mode: 'edit'
+                }, view => {
+                    console.log("View");
+                    view.render();
+                });
 
-                this.initTimepicker();
+                //this.initTimepicker();
 
                 this.$element.on('change.datetime', (e) => {
                     if (this.$element.val() && !$time.val()) {

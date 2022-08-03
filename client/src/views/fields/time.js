@@ -1,4 +1,4 @@
-define('views/fields/time', ['views/fields/base'], function (Dep) {
+define('views/fields/time', ['views/fields/base', 'lib!moment'], function (Dep, moment) {
 
     /**
      * JSDoc enabling code completion in PhpStorm/Webstorm.
@@ -15,6 +15,10 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
 
         editTemplate: 'fields/time/edit',
 
+        isDateTimeField: false,
+
+        isTimeStampField: false,
+
         timeFormatMap: {
             'HH:mm': 'H:i',
             'hh:mm A': 'h:i A',
@@ -25,14 +29,26 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
 
         setup: function () {
             Dep.prototype.setup.call(this);
+
+            this.isDateTimeField = ('isDateTimeField' in this.options) && this.options.isDateTimeField == true;
+            this.isTimeStampField = ('isTimeStampField' in this.options) && this.options.isTimeStampField == true;
         },
 
         data: function() {
             var data = Dep.prototype.data.call(this);
 
-            data.time = this.model.get(this.name);
-            data.timeString = this.timeOffsetToString(data.time);
+            let time = this.model.get(this.name);
+            if(this.isDateTimeField) {
+                //timeString = moment(time).format('HH:mm');
+                time = (new Date(time)).getTime();
+            } 
+            
+            timeString = moment(time).format('HH:mm');
 
+            data.time = time;
+            data.timeString = timeString;
+
+            console.log(data);
             return data;
         },
 
@@ -45,7 +61,7 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
                 timeFormat: this.timeFormatMap[this.getDateTime().timeFormat],
                 disableTimeRanges: this.getDisabledTimeRanges(),
                 minTime: this.params.min || 0,
-                maxTime: this.params.max || 86400,
+                maxTime: this.params.max || 86399,
                 wrapHours: this.params.wrapHours || false
             });
             
@@ -170,9 +186,9 @@ define('views/fields/time', ['views/fields/base'], function (Dep) {
 
         fetch: function() {
             var data = {};
-
+            
             data[this.name] = this.timeStringToOffset(this.$time.val());
-
+            
             return data;
         }
     });
