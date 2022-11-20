@@ -86,6 +86,8 @@ class Pdf
 
     private $dataLoaderManager;
 
+    private \Espo\Entities\Preferences $preferences;
+
     public function __construct(
         Config $config,
         EntityManager $entityManager,
@@ -94,7 +96,8 @@ class Pdf
         SelectBuilderFactory $selectBuilderFactory,
         Builder $builder,
         ServiceContainer $serviceContainer,
-        DataLoaderManager $dataLoaderManager
+        DataLoaderManager $dataLoaderManager,
+        \Espo\Entities\Preferences $preferences
     ) {
         $this->config = $config;
         $this->entityManager = $entityManager;
@@ -104,6 +107,7 @@ class Pdf
         $this->builder = $builder;
         $this->serviceContainer = $serviceContainer;
         $this->dataLoaderManager = $dataLoaderManager;
+        $this->preferences = $preferences;
     }
 
     /**
@@ -144,7 +148,7 @@ class Pdf
             }
         }
 
-        $engine = $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
+        $engine = $this->preferences->get('pdfEngine') ?? $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
 
         $templateWrapper = new TemplateWrapper($template);
 
@@ -248,7 +252,7 @@ class Pdf
 
         $templateWrapper = new TemplateWrapper($template);
 
-        $engine = $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
+        $engine = $this->preferences->get('pdfEngine') ?? $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
 
         $printer = $this->builder
             ->setTemplate($templateWrapper)
@@ -399,7 +403,7 @@ class Pdf
 
         $data = $this->dataLoaderManager->load($entity, $params, $data);
 
-        $engine = $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
+        $engine = $this->preferences->get('pdfEngine') ?? $this->config->get('pdfEngine') ?? self::DEFAULT_ENGINE;
 
         $printer = $this->builder
             ->setTemplate($templateWrapper)

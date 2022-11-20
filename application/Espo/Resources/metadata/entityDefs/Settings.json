@@ -751,6 +751,14 @@
         "smsProvider": {
             "type": "enum",
             "view": "views/settings/fields/sms-provider"
+        },
+        "pdfEngine": {
+            "type": "enum",
+            "options": [
+                "Tcpdf",
+                "WkPdf"
+            ],
+            "default": "Tcpdf"
         }
     }
 }
